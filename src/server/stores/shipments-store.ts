@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { ShipmentDraft } from "@/lib/domain/types";
-import { getSupabaseAdminClient } from "@/server/supabase/admin";
+import { getSupabaseAdminClient, getSupabaseAdminCredentials } from "@/server/supabase/admin";
 
 export interface StoredShipment extends ShipmentDraft {
   id: string;
@@ -22,6 +22,10 @@ function listLocalShipments(query?: { search?: string }) {
         .some((value) => value!.toLowerCase().includes(search)),
     )
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+function shouldRequirePersistentStorage() {
+  return process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
 }
 
 export async function listShipments(query?: { search?: string }) {
@@ -71,7 +75,16 @@ export async function commitShipments(drafts: ShipmentDraft[]) {
   }));
 
   const supabase = getSupabaseAdminClient();
-  if (supabase) {
+  if (!supabase) {
+    if (shouldRequirePersistentStorage() || getSupabaseAdminCredentials()) {
+      throw new Error("Supabase persistence is unavailable");
+    }
+
+    shipments.unshift(...inserted);
+    return inserted;
+  }
+
+  {
     const shipmentRows = inserted.map((shipment) => ({
       id: shipment.id,
       external_code: shipment.externalCode ?? null,
@@ -96,12 +109,19 @@ export async function commitShipments(drafts: ShipmentDraft[]) {
     );
 
     const shipmentsInsert = await supabase.from("shipments").insert(shipmentRows);
-    if (!shipmentsInsert.error) {
-      await supabase.from("shipment_items").insert(itemRows);
-      return inserted;
+    if (shipmentsInsert.error) {
+      throw new Error(shipmentsInsert.error.message);
     }
-  }
 
-  shipments.unshift(...inserted);
-  return inserted;
+    const itemsInsert = await supabase.from("shipment_items").insert(itemRows);
+    if (itemsInsert.error) {
+      await supabase.from("shipments").delete().in(
+        "id",
+        inserted.map((shipment) => shipment.id),
+      );
+      throw new Error(itemsInsert.error.message);
+    }
+
+    return inserted;
+  }
 }

@@ -32,6 +32,12 @@ type ParsedSegment = {
   rows: RowRecord[];
 };
 
+type MatrixPivotOptions = {
+  storeColumns: string[];
+  quantityField?: string;
+  storeField?: string;
+};
+
 function rowsToMatrix(snapshot: DocumentSnapshot): SegmentContext[] {
   return snapshot.sheets.map((sheet) => ({
     name: sheet.name,
@@ -108,6 +114,57 @@ function parseWholeSheetSegment(segment: SegmentContext, definition: ImportRuleD
   }
 
   return { meta, rows };
+}
+
+function parseMatrixSegments(segment: SegmentContext, definition: ImportRuleDefinition): ParsedSegment[] {
+  const matrix = segment.rows;
+  const headerRowIndex = (definition.table.headerRow ?? 1) - 1;
+  const dataStartIndex = (definition.table.dataStartRow ?? definition.table.headerRow ?? 1) - 1;
+  const dataEndIndex = definition.table.dataEndRow ? definition.table.dataEndRow - 1 : matrix.length - 1;
+  const header = matrix[headerRowIndex] ?? [];
+  const columnMap = definition.table.columnMap ?? {};
+  const transform = definition.transforms.find((item) => item.type === "pivotMatrixColumns");
+  const options = (transform?.options ?? {}) as MatrixPivotOptions;
+  const storeColumns = options.storeColumns ?? [];
+  const quantityField = options.quantityField ?? "quantity";
+  const storeField = options.storeField ?? "storeName";
+  const rows: RowRecord[] = [];
+
+  for (let rowIndex = dataStartIndex; rowIndex <= dataEndIndex; rowIndex += 1) {
+    const row = matrix[rowIndex] ?? [];
+    if (isSkippableRow(row)) {
+      continue;
+    }
+
+    const baseRow = mapRowByHeader(header, row, columnMap);
+    const skuCode = baseRow.skuCode?.trim();
+    const skuName = baseRow.skuName?.trim();
+    if (!skuCode || !skuName) {
+      continue;
+    }
+
+    for (const storeColumn of storeColumns) {
+      const headerIndex = header.findIndex((label) => label.trim() === storeColumn.trim());
+      if (headerIndex < 0) {
+        continue;
+      }
+
+      const rawQuantity = (row[headerIndex] ?? "").trim();
+      const quantity = Number(rawQuantity);
+      if (!rawQuantity || !Number.isFinite(quantity) || quantity <= 0) {
+        continue;
+      }
+
+      rows.push({
+        ...baseRow,
+        [storeField]: storeColumn.trim(),
+        [quantityField]: String(quantity),
+        externalCode: storeColumn.trim(),
+      });
+    }
+  }
+
+  return [{ meta: {}, rows }];
 }
 
 function parseCardSegments(segment: SegmentContext, definition: ImportRuleDefinition): ParsedSegment[] {
@@ -314,6 +371,13 @@ function parseExcelSnapshot(snapshot: DocumentSnapshot, definition: ImportRuleDe
 
   if (definition.segment.mode === "cardBlocks") {
     const parsed = segments.flatMap((segment) => parseCardSegments(segment, definition));
+    return buildShipmentsFromParsedSegments(parsed, definition);
+  }
+
+  if (definition.transforms.some((transform) => transform.type === "pivotMatrixColumns")) {
+    const applicableSegments =
+      definition.segment.mode === "perSheet" ? segments : segments.length > 0 ? [segments[0]] : [];
+    const parsed = applicableSegments.flatMap((segment) => parseMatrixSegments(segment, definition));
     return buildShipmentsFromParsedSegments(parsed, definition);
   }
 

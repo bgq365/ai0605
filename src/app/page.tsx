@@ -24,17 +24,23 @@ export default async function Home() {
               <Link className="rounded-full border border-[#b7dfde] bg-[#f7fefe] px-4 py-2 text-[#0b6e6e]" href="/">
                 导入工作台
               </Link>
-              <Link className="rounded-full border border-[#b7dfde] bg-white px-4 py-2 text-[#234548] hover:bg-[#f7fefe]" href="/rules">
+              <Link
+                className="rounded-full border border-[#b7dfde] bg-white px-4 py-2 text-[#234548] hover:bg-[#f7fefe]"
+                href="/rules"
+              >
                 解析规则
               </Link>
-              <Link className="rounded-full border border-[#b7dfde] bg-white px-4 py-2 text-[#234548] hover:bg-[#f7fefe]" href="/shipments">
+              <Link
+                className="rounded-full border border-[#b7dfde] bg-white px-4 py-2 text-[#234548] hover:bg-[#f7fefe]"
+                href="/shipments"
+              >
                 已导入运单
               </Link>
             </nav>
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            <HeroMetric label="已内置规则" value={String(rules.length)} detail="覆盖 5 份真实附件验收" />
+            <HeroMetric label="已内置规则" value={String(rules.length)} detail="覆盖 6 份真实附件验收" />
             <HeroMetric label="已验证格式" value="Excel / PDF" detail="Word 适配器接口已预留" />
             <HeroMetric label="执行方式" value="手动选规则" detail="支持试解析预览与 AI 建议" />
           </div>

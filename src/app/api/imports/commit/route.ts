@@ -11,11 +11,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "存在未修复校验错误", issues }, { status: 400 });
   }
 
-  const inserted = await commitShipments(shipments);
+  try {
+    const inserted = await commitShipments(shipments);
 
-  return NextResponse.json({
-    successCount: inserted.length,
-    failureCount: 0,
-    shipments: inserted,
-  });
+    return NextResponse.json({
+      successCount: inserted.length,
+      failureCount: 0,
+      shipments: inserted,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Shipment persistence failed";
+    return NextResponse.json({ error: message }, { status: 503 });
+  }
 }

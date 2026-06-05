@@ -1,13 +1,15 @@
 import type { ImportRule } from "@/lib/domain/types";
 
+const timestamp = "2026-06-05T00:00:00.000Z";
+
 export const sampleRules: ImportRule[] = [
   {
     id: "haikou-footer-excel",
     name: "海口配送发货单",
-    description: "主表 + 尾部收货信息提取",
+    description: "主表明细 + 尾部收货信息提取",
     documentKind: "excel",
-    createdAt: "2026-06-05T00:00:00.000Z",
-    updatedAt: "2026-06-05T00:00:00.000Z",
+    createdAt: timestamp,
+    updatedAt: timestamp,
     definition: {
       source: { mode: "excelSheets" },
       segment: { mode: "wholeSheet" },
@@ -56,10 +58,10 @@ export const sampleRules: ImportRule[] = [
   {
     id: "hunan-grouped-excel",
     name: "湖南仓发货明细",
-    description: "按配送单号分组聚合",
+    description: "按配送单号聚合多 SKU",
     documentKind: "excel",
-    createdAt: "2026-06-05T00:00:00.000Z",
-    updatedAt: "2026-06-05T00:00:00.000Z",
+    createdAt: timestamp,
+    updatedAt: timestamp,
     definition: {
       source: { mode: "excelSheets" },
       segment: { mode: "wholeSheet" },
@@ -102,11 +104,11 @@ export const sampleRules: ImportRule[] = [
   },
   {
     id: "multi-sheet-footer-excel",
-    name: "多门店分Sheet出库单",
-    description: "多 Sheet 合并 + 底部信息提取",
+    name: "多门店分 Sheet 出库单",
+    description: "多 Sheet 合并 + 尾部收货信息提取",
     documentKind: "excel",
-    createdAt: "2026-06-05T00:00:00.000Z",
-    updatedAt: "2026-06-05T00:00:00.000Z",
+    createdAt: timestamp,
+    updatedAt: timestamp,
     definition: {
       source: { mode: "excelSheets" },
       segment: { mode: "perSheet" },
@@ -154,10 +156,10 @@ export const sampleRules: ImportRule[] = [
   {
     id: "card-transfer-excel",
     name: "门店调拨卡片单",
-    description: "卡片边界识别 + 每卡片独立小表",
+    description: "按卡片标记切分，每张卡片独立成单",
     documentKind: "excel",
-    createdAt: "2026-06-05T00:00:00.000Z",
-    updatedAt: "2026-06-05T00:00:00.000Z",
+    createdAt: timestamp,
+    updatedAt: timestamp,
     definition: {
       source: { mode: "excelSheets" },
       segment: { mode: "cardBlocks", marker: "▶ 调拨记录" },
@@ -187,12 +189,63 @@ export const sampleRules: ImportRule[] = [
     },
   },
   {
+    id: "matrix-store-excel",
+    name: "欢乐牧场矩阵配货单",
+    description: "按门店列透视矩阵数量并聚合成运单",
+    documentKind: "excel",
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    definition: {
+      source: { mode: "excelSheets" },
+      segment: { mode: "wholeSheet" },
+      table: {
+        headerRow: 1,
+        dataStartRow: 2,
+        columnMap: {
+          warehouseName: "仓库名称",
+          ownerName: "货主名称",
+          skuName: "SKU名称",
+          skuCode: "SKU条码",
+          externalSkuCode: "外部商品编码",
+          skuSpec: "规格",
+        },
+      },
+      transforms: [
+        {
+          type: "pivotMatrixColumns",
+          options: {
+            storeColumns: ["银泰", "金银潭", "金桥", "门店B", "门店D"],
+            quantityField: "quantity",
+            storeField: "storeName",
+          },
+        },
+      ],
+      output: {
+        groupingField: "storeName",
+        fields: {
+          externalCode: "externalCode",
+          storeName: "storeName",
+          recipientName: "recipientName",
+          recipientPhone: "recipientPhone",
+          recipientAddress: "recipientAddress",
+          remark: "remark",
+        },
+        itemFields: {
+          skuCode: "skuCode",
+          skuName: "skuName",
+          skuSpec: "skuSpec",
+          quantity: "quantity",
+        },
+      },
+    },
+  },
+  {
     id: "pdf-delivery-text",
     name: "PDF 配送单",
     description: "PDF 明细提取 + 收货区识别",
     documentKind: "pdf",
-    createdAt: "2026-06-05T00:00:00.000Z",
-    updatedAt: "2026-06-05T00:00:00.000Z",
+    createdAt: timestamp,
+    updatedAt: timestamp,
     definition: {
       source: { mode: "pdfPages" },
       segment: { mode: "pdfSingle" },
@@ -202,12 +255,12 @@ export const sampleRules: ImportRule[] = [
           type: "extractTextByRegex",
           options: {
             itemPattern:
-              "^(\\d+)\\s+(.+?)\\s+(ZBWP\\d+)\\s+(.+?)\\s+([^\\s]+)\\s+(件|包|桶|盒|瓶)\\s+(\\d+)$",
-            recipientPattern: "收货人[:：]\\s*(.+?)\\s*收货电话",
-            phonePattern: "收货电话[:：]\\s*(\\d{11})",
-            addressPattern: "收货地址[:：]\\s*(.+)$",
-            externalCodePattern: "单据编号[:：]\\s*([^\\s]+)",
-            storeNamePattern: "收货机构[:：]\\s*([^\\n]+)",
+              "^(\\d+)\\s+(.+?)\\s+(ZBWP\\d+)\\s+(.+?)\\s+([^\\s]+)\\s+(件|包|瓶|盒|袋|kg|KG)\\s+(\\d+)$",
+            recipientPattern: "收货人[：:]\\s*(.+?)\\s*收货电话",
+            phonePattern: "收货电话[：:]\\s*(\\d{11})",
+            addressPattern: "收货地址[：:]\\s*(.+)$",
+            externalCodePattern: "单据编号[：:]\\s*([^\\s]+)",
+            storeNamePattern: "收货机构[：:]\\s*([^\\n]+)",
           },
         },
       ],
