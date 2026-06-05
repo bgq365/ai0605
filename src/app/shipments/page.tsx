@@ -17,7 +17,10 @@ export default async function ShipmentsPage() {
       ) : (
         <div className="grid gap-4">
           {shipments.map((shipment) => (
-            <article key={shipment.id} className="rounded-[24px] border border-[#c6eceb] bg-white p-5 shadow-[0_12px_32px_rgba(15,198,194,0.08)]">
+            <article
+              key={shipment.id}
+              className="rounded-[24px] border border-[#c6eceb] bg-white p-5 shadow-[0_12px_32px_rgba(15,198,194,0.08)]"
+            >
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-semibold text-[#153436]">

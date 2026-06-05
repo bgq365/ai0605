@@ -45,8 +45,12 @@ export function ImportWorkbench({ rules }: ImportWorkbenchProps) {
 
     setError(null);
     startTransition(async () => {
+      if (!selectedFile) {
+        return;
+      }
+
       const formData = new FormData();
-      formData.append("file", selectedFile!);
+      formData.append("file", selectedFile);
       formData.append("ruleId", selectedRuleId);
 
       const response = await fetch("/api/imports/preview", {
@@ -75,8 +79,12 @@ export function ImportWorkbench({ rules }: ImportWorkbenchProps) {
 
     setError(null);
     startTransition(async () => {
+      if (!selectedFile) {
+        return;
+      }
+
       const formData = new FormData();
-      formData.append("file", selectedFile!);
+      formData.append("file", selectedFile);
 
       const response = await fetch("/api/rules/suggest", {
         method: "POST",
@@ -127,6 +135,9 @@ export function ImportWorkbench({ rules }: ImportWorkbenchProps) {
   }
 
   const blockingIssues = preview?.issues.filter((issue) => issue.severity === "error").length ?? 0;
+  const highConfidenceCount = suggestion
+    ? Object.values(suggestion.confidenceByField).filter((value) => value >= 0.85).length
+    : 0;
 
   return (
     <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
@@ -197,10 +208,7 @@ export function ImportWorkbench({ rules }: ImportWorkbenchProps) {
         {suggestion ? (
           <div className="mt-4 rounded-2xl border border-[#d2eceb] bg-[#fbfefe] p-4 text-sm text-[#335b60]">
             <p className="font-semibold text-[#153436]">AI 推荐结果</p>
-            <p className="mt-2">
-              高置信字段数：
-              {Object.values(suggestion.confidenceByField).filter((value) => value >= 0.85).length}
-            </p>
+            <p className="mt-2">高置信字段数：{highConfidenceCount}</p>
             <p className="mt-2">假设：{suggestion.assumptions.join("；") || "暂无"}</p>
             <p className="mt-2">待确认：{suggestion.unknowns.join("；") || "暂无"}</p>
           </div>
@@ -262,7 +270,7 @@ export function ImportWorkbench({ rules }: ImportWorkbenchProps) {
                   <ul className="mt-3 space-y-2 text-sm text-[#335b60]">
                     {shipment.items.slice(0, 4).map((item) => (
                       <li key={`${item.skuCode}-${item.skuName}`} className="rounded-xl bg-white px-3 py-2">
-                        <span className="font-medium text-[#153436]">{item.skuCode}</span> {item.skuName} ×{" "}
+                        <span className="font-medium text-[#153436]">{item.skuCode}</span> {item.skuName} x{" "}
                         {item.quantity}
                       </li>
                     ))}
