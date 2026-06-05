@@ -45,9 +45,9 @@ vi.mock("@/lib/imports/preview", () => ({
   previewImport: vi.fn(),
 }));
 
-import Home from "@/app/page";
-import RulesPage from "@/app/rules/page";
-import ShipmentsPage from "@/app/shipments/page";
+import Home, * as homePageModule from "@/app/page";
+import RulesPage, * as rulesPageModule from "@/app/rules/page";
+import ShipmentsPage, * as shipmentsPageModule from "@/app/shipments/page";
 import { sampleRules } from "@/lib/domain/sample-rules";
 import type { DocumentSnapshot, ImportRuleDefinition } from "@/lib/domain/types";
 import { previewImportFromSnapshot } from "@/lib/imports/service";
@@ -83,6 +83,12 @@ describe("pages, stores, and support modules", () => {
     expect(screen.getByText("万能导入 V2")).toBeInTheDocument();
     expect(screen.getByText("导入工作台")).toBeInTheDocument();
     expect(screen.getByTestId("import-workbench")).toHaveTextContent("rules:5");
+  });
+
+  it("marks server-rendered data pages as dynamic", () => {
+    expect(homePageModule.dynamic).toBe("force-dynamic");
+    expect(rulesPageModule.dynamic).toBe("force-dynamic");
+    expect(shipmentsPageModule.dynamic).toBe("force-dynamic");
   });
 
   it("renders the rules page", async () => {
