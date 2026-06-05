@@ -34,18 +34,44 @@ export async function listShipments(query?: { search?: string }) {
     return listLocalShipments(query);
   }
 
-  let request = supabase.from("shipments").select("*, shipment_items(*)").order("created_at", { ascending: false });
+  let request = supabase.from("shipments").select("*");
   const search = query?.search?.trim();
   if (search) {
     request = request.or(`external_code.ilike.%${search}%,recipient_name.ilike.%${search}%,store_name.ilike.%${search}%`);
   }
 
-  const { data, error } = await request;
-  if (error || !data) {
+  const { data: shipmentRows, error: shipmentsError } = await request.order("created_at", { ascending: false });
+  if (shipmentsError || !shipmentRows) {
     return listLocalShipments(query);
   }
 
-  return data.map((row) => ({
+  const shipmentIds = shipmentRows.map((row) => String(row.id)).filter(Boolean);
+  let itemsByShipmentId = new Map<string, Array<Record<string, unknown>>>();
+
+  if (shipmentIds.length > 0) {
+    const { data: itemRows, error: itemsError } = await supabase
+      .from("shipment_items")
+      .select("*")
+      .in("shipment_id", shipmentIds);
+
+    if (itemsError) {
+      return listLocalShipments(query);
+    }
+
+    itemsByShipmentId = (itemRows ?? []).reduce<Map<string, Array<Record<string, unknown>>>>((grouped, item) => {
+      const shipmentId = String(item.shipment_id ?? "");
+      if (!shipmentId) {
+        return grouped;
+      }
+
+      const existing = grouped.get(shipmentId) ?? [];
+      existing.push(item as Record<string, unknown>);
+      grouped.set(shipmentId, existing);
+      return grouped;
+    }, new Map<string, Array<Record<string, unknown>>>());
+  }
+
+  return shipmentRows.map((row) => ({
     id: String(row.id),
     externalCode: row.external_code ? String(row.external_code) : undefined,
     storeName: row.store_name ? String(row.store_name) : undefined,
@@ -53,14 +79,12 @@ export async function listShipments(query?: { search?: string }) {
     recipientPhone: row.recipient_phone ? String(row.recipient_phone) : undefined,
     recipientAddress: row.recipient_address ? String(row.recipient_address) : undefined,
     remark: row.remark ? String(row.remark) : undefined,
-    items: Array.isArray(row.shipment_items)
-      ? row.shipment_items.map((item: Record<string, unknown>) => ({
+    items: (itemsByShipmentId.get(String(row.id)) ?? []).map((item: Record<string, unknown>) => ({
           skuCode: String(item.sku_code ?? ""),
           skuName: String(item.sku_name ?? ""),
           skuSpec: item.sku_spec ? String(item.sku_spec) : undefined,
           quantity: Number(item.quantity ?? 0),
-        }))
-      : [],
+        })),
     sourceRowIds: [],
     createdAt: String(row.created_at),
   }));
