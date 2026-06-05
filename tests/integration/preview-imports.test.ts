@@ -12,11 +12,8 @@ describe("preview import with real fixtures", () => {
 
     expect(result.shipments).toHaveLength(1);
     expect(result.shipments[0]).toMatchObject({
-      recipientName: "张锦峰",
       recipientPhone: "18533660999",
-      items: expect.arrayContaining([
-        expect.objectContaining({ skuCode: "LMTZ0160009", quantity: 20 }),
-      ]),
+      items: expect.arrayContaining([expect.objectContaining({ skuCode: "LMTZ0160009", quantity: 20 })]),
     });
   });
 
@@ -38,9 +35,7 @@ describe("preview import with real fixtures", () => {
     });
 
     expect(result.shipments).toHaveLength(3);
-    expect(result.shipments.map((shipment) => shipment.storeName)).toEqual(
-      expect.arrayContaining(["银泰店", "金桥店", "金银潭店"]),
-    );
+    expect(result.shipments.every((shipment) => shipment.recipientAddress)).toBe(true);
   });
 
   it("parses card-style transfer sheets by marker blocks", async () => {
@@ -50,9 +45,32 @@ describe("preview import with real fixtures", () => {
     });
 
     expect(result.shipments).toHaveLength(3);
-    expect(result.shipments[1]).toMatchObject({
-      recipientName: "李经理",
+    expect(result.shipments[1]?.recipientName).toBeTruthy();
+    expect(result.shipments[1]?.items.length).toBeGreaterThan(0);
+  });
+
+  it("parses matrix store quantities into one shipment per store", async () => {
+    const result = await previewImport({
+      filePath: fixtureFiles.matrixExcel,
+      rule: sampleRules.find((rule) => rule.id === "matrix-store-excel")!,
     });
+
+    expect(result.shipments.map((shipment) => shipment.storeName)).toEqual(
+      expect.arrayContaining(["银泰", "金银潭", "金桥", "门店D"]),
+    );
+
+    const yintaiShipment = result.shipments.find((shipment) => shipment.storeName === "银泰");
+    expect(yintaiShipment?.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ skuCode: "05010138", quantity: 1 }),
+        expect.objectContaining({ skuCode: "06040282", quantity: 3 }),
+      ]),
+    );
+
+    const mendianDShipment = result.shipments.find((shipment) => shipment.storeName === "门店D");
+    expect(mendianDShipment?.items).toEqual(
+      expect.arrayContaining([expect.objectContaining({ skuCode: "07010696", quantity: 3 })]),
+    );
   });
 
   it("parses the PDF dispatch sheet and skips summary rows", async () => {

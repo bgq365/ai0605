@@ -17,6 +17,18 @@ vi.mock("@/components/import-workbench", () => ({
   ),
 }));
 
+vi.mock("@/components/rules-manager", () => ({
+  RulesManager: ({ initialRules }: { initialRules: Array<{ id: string }> }) => (
+    <div data-testid="rules-manager">rules:{initialRules.length}</div>
+  ),
+}));
+
+vi.mock("@/components/shipments-history", () => ({
+  ShipmentsHistory: ({ initialShipments }: { initialShipments: Array<{ externalCode?: string }> }) => (
+    <div data-testid="shipments-history">shipments:{initialShipments.length}</div>
+  ),
+}));
+
 vi.mock("@/server/stores/rules-store", async () => {
   const actual = await vi.importActual<typeof import("@/server/stores/rules-store")>("@/server/stores/rules-store");
   return {
@@ -82,7 +94,7 @@ describe("pages, stores, and support modules", () => {
 
     expect(screen.getByText("万能导入 V2")).toBeInTheDocument();
     expect(screen.getByText("导入工作台")).toBeInTheDocument();
-    expect(screen.getByTestId("import-workbench")).toHaveTextContent("rules:5");
+    expect(screen.getByTestId("import-workbench")).toHaveTextContent("rules:6");
   });
 
   it("marks server-rendered data pages as dynamic", () => {
@@ -98,13 +110,13 @@ describe("pages, stores, and support modules", () => {
     render(element);
 
     expect(screen.getByText("解析规则列表")).toBeInTheDocument();
-    expect(screen.getByText(sampleRules[0].name)).toBeInTheDocument();
+    expect(screen.getByTestId("rules-manager")).toHaveTextContent("rules:1");
   });
 
   it("renders shipment pages for both empty and populated states", async () => {
     mockedListShipments.mockResolvedValueOnce([]);
     render(await ShipmentsPage());
-    expect(screen.getByText("还没有已提交运单。先在首页完成一次试解析与提交。")).toBeInTheDocument();
+    expect(screen.getByTestId("shipments-history")).toHaveTextContent("shipments:0");
 
     mockedListShipments.mockResolvedValueOnce([
       {
@@ -125,8 +137,7 @@ describe("pages, stores, and support modules", () => {
     ]);
     render(await ShipmentsPage());
 
-    expect(screen.getByText("海口龙湖店")).toBeInTheDocument();
-    expect(screen.getByText(/SO-1/)).toBeInTheDocument();
+    expect(screen.getAllByTestId("shipments-history")[1]).toHaveTextContent("shipments:1");
   });
 
   it("builds preview results from snapshot service", async () => {

@@ -7,5 +7,6 @@ export const fixtureFiles = {
   hunanExcel: path.join(root, "AI考试附件", "demos", "湖南仓.xlsx"),
   multiSheetExcel: path.join(root, "AI考试附件", "demos", "多门店分Sheet出库单.xlsx"),
   cardExcel: path.join(root, "AI考试附件", "demos", "门店调拨单-卡片式.xlsx"),
+  matrixExcel: path.join(root, "AI考试附件", "demos", "欢乐牧场模板0430.xlsx"),
   pdfDelivery: path.join(root, "AI考试附件", "demos", "黔寨寨贵州烙锅（鞍山店）常温.pdf"),
 };

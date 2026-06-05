@@ -13,6 +13,12 @@ describe("ImportWorkbench", () => {
 
   it("shows a validation message when preview is clicked without a file", async () => {
     const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ shipments: [] }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
     render(<ImportWorkbench rules={sampleRules} />);
 
     await user.click(screen.getByRole("button", { name: "试解析预览" }));
@@ -22,18 +28,24 @@ describe("ImportWorkbench", () => {
 
   it("renders AI suggestion details after a successful suggestion request", async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        confidenceByField: {
-          externalCode: 0.92,
-          items: 0.87,
-          recipientPhone: 0.65,
-        },
-        assumptions: ["识别为多 SKU 聚合模板"],
-        unknowns: ["地址字段建议人工确认"],
-      }),
-    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ shipments: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          confidenceByField: {
+            externalCode: 0.92,
+            items: 0.87,
+            recipientPhone: 0.65,
+          },
+          assumptions: ["识别为多 SKU 聚合模板"],
+          unknowns: ["地址字段建议人工确认"],
+        }),
+      });
 
     vi.stubGlobal("fetch", fetchMock);
 
@@ -51,7 +63,8 @@ describe("ImportWorkbench", () => {
     expect(screen.getByText("高置信字段数：2")).toBeInTheDocument();
     expect(screen.getByText("假设：识别为多 SKU 聚合模板")).toBeInTheDocument();
     expect(screen.getByText("待确认：地址字段建议人工确认")).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
       "/api/rules/suggest",
       expect.objectContaining({
         method: "POST",
@@ -66,13 +79,18 @@ describe("ImportWorkbench", () => {
       .fn()
       .mockResolvedValueOnce({
         ok: true,
+        json: async () => ({ shipments: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
         json: async () => ({
           shipments: [
             {
               externalCode: "SO-1",
               storeName: "海口龙湖店",
-              recipientName: "张锦峰",
+              recipientName: "张三",
               recipientPhone: "18533660999",
+              recipientAddress: "海南省海口市",
               items: [
                 {
                   skuCode: "SKU-1",
@@ -106,8 +124,8 @@ describe("ImportWorkbench", () => {
     await user.upload(input, file);
     await user.click(screen.getByRole("button", { name: "试解析预览" }));
 
-    expect(await screen.findByText("结构化运单预览")).toBeInTheDocument();
-    expect(await screen.findByText("海口龙湖店")).toBeInTheDocument();
+    expect(await screen.findByDisplayValue("海口龙湖店")).toBeInTheDocument();
+    expect(await screen.findByDisplayValue("SKU-1")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "提交下单" }));
 

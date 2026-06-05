@@ -3,8 +3,8 @@ import { sampleRules } from "@/lib/domain/sample-rules";
 import { validateImportRuleDefinition } from "@/lib/rules/schema";
 
 describe("import rule schema", () => {
-  it("includes seed rules for the current five real fixtures", () => {
-    expect(sampleRules).toHaveLength(5);
+  it("includes seed rules for the current six real fixtures", () => {
+    expect(sampleRules).toHaveLength(6);
   });
 
   it("validates all seed rule definitions", () => {
