@@ -45,8 +45,10 @@ describe("preview import with real fixtures", () => {
     });
 
     expect(result.shipments).toHaveLength(3);
+    expect(result.issues).toHaveLength(0);
     expect(result.shipments[1]?.recipientName).toBeTruthy();
     expect(result.shipments[1]?.items.length).toBeGreaterThan(0);
+    expect(result.shipments[2]?.items.some((item) => item.skuCode.includes("合计"))).toBe(false);
   });
 
   it("parses matrix store quantities into one shipment per store", async () => {

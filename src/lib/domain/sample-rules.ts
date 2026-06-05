@@ -164,6 +164,7 @@ export const sampleRules: ImportRule[] = [
       source: { mode: "excelSheets" },
       segment: { mode: "cardBlocks", marker: "▶ 调拨记录" },
       table: {
+        skipRowsContaining: ["合计"],
         columnMap: {
           skuCode: "物品编码",
           skuName: "物品名称",

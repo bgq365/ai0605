@@ -170,6 +170,7 @@ function parseMatrixSegments(segment: SegmentContext, definition: ImportRuleDefi
 function parseCardSegments(segment: SegmentContext, definition: ImportRuleDefinition): ParsedSegment[] {
   const marker = definition.segment.marker ?? "";
   const matrix = segment.rows;
+  const skipTerms = definition.table.skipRowsContaining ?? [];
   const starts = matrix
     .map((row, index) => ({ row, index }))
     .filter(({ row }) => row.some((cell) => cell.includes(marker)))
@@ -188,7 +189,10 @@ function parseCardSegments(segment: SegmentContext, definition: ImportRuleDefini
     meta.recipientAddress = addressRow[1] ?? "";
 
     const header = block[3] ?? [];
-    const dataRows = block.slice(4).filter((row) => row.some((cell) => cell.trim()));
+    const dataRows = block
+      .slice(4)
+      .filter((row) => row.some((cell) => cell.trim()))
+      .filter((row) => !isSkippableRow(row, skipTerms));
     const rows = dataRows.map((row) => mapRowByHeader(header, row, definition.table.columnMap ?? {}));
 
     return { meta, rows };
