@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ImportWorkbench } from "@/components/import-workbench";
 import { listRules } from "@/server/stores/rules-store";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const rules = await listRules();
 

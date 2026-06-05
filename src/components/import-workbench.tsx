@@ -156,7 +156,9 @@ export function ImportWorkbench({ rules }: ImportWorkbenchProps) {
           <label className="grid gap-2 text-sm font-medium text-[#214447]">
             解析规则
             <select
+              id="ruleId"
               className="rounded-2xl border border-[#b7dfde] bg-[#f8ffff] px-4 py-3 text-sm text-[#153436] outline-none transition focus:border-[#0fc6c2]"
+              name="ruleId"
               value={selectedRuleId}
               onChange={(event) => setSelectedRuleId(event.target.value)}
             >
@@ -171,7 +173,9 @@ export function ImportWorkbench({ rules }: ImportWorkbenchProps) {
           <label className="grid gap-2 text-sm font-medium text-[#214447]">
             上传文件
             <input
+              id="sourceFile"
               className="rounded-2xl border border-dashed border-[#8ad8d6] bg-[#f8ffff] px-4 py-5 text-sm text-[#153436]"
+              name="sourceFile"
               type="file"
               onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
             />

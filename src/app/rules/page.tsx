@@ -1,5 +1,7 @@
 import { listRules } from "@/server/stores/rules-store";
 
+export const dynamic = "force-dynamic";
+
 export default async function RulesPage() {
   const rules = await listRules();
 

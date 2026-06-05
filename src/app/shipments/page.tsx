@@ -1,5 +1,7 @@
 import { listShipments } from "@/server/stores/shipments-store";
 
+export const dynamic = "force-dynamic";
+
 export default async function ShipmentsPage() {
   const shipments = await listShipments();
 
