@@ -116,6 +116,8 @@ describe("pages, stores, and support modules", () => {
     render(element);
 
     expect(screen.getByText("解析规则列表")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "导入工作台" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "已导入运单" })).toHaveAttribute("href", "/shipments");
     expect(screen.getByTestId("rules-manager")).toHaveTextContent("rules:1");
   });
 
@@ -143,6 +145,8 @@ describe("pages, stores, and support modules", () => {
     ]);
     render(await ShipmentsPage());
 
+    expect(screen.getAllByRole("link", { name: "导入工作台" })[1]).toHaveAttribute("href", "/");
+    expect(screen.getAllByRole("link", { name: "解析规则" })[1]).toHaveAttribute("href", "/rules");
     expect(screen.getAllByTestId("shipments-history")[1]).toHaveTextContent("shipments:1");
   });
 

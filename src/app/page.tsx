@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppNav } from "@/components/app-nav";
 import { ImportWorkbench } from "@/components/import-workbench";
 import { listRules } from "@/server/stores/rules-store";
 
@@ -20,23 +20,7 @@ export default async function Home() {
               </p>
             </div>
 
-            <nav className="flex flex-wrap gap-3 text-sm font-medium">
-              <Link className="rounded-full border border-[#b7dfde] bg-[#f7fefe] px-4 py-2 text-[#0b6e6e]" href="/">
-                导入工作台
-              </Link>
-              <Link
-                className="rounded-full border border-[#b7dfde] bg-white px-4 py-2 text-[#234548] hover:bg-[#f7fefe]"
-                href="/rules"
-              >
-                解析规则
-              </Link>
-              <Link
-                className="rounded-full border border-[#b7dfde] bg-white px-4 py-2 text-[#234548] hover:bg-[#f7fefe]"
-                href="/shipments"
-              >
-                已导入运单
-              </Link>
-            </nav>
+            <AppNav />
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
