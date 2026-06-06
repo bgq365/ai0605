@@ -17,6 +17,21 @@ function sortRules(items: ImportRule[]) {
   return [...items].sort((a, b) => a.name.localeCompare(b.name));
 }
 
+function cloneRule(rule: ImportRule) {
+  return {
+    ...rule,
+    definition: JSON.parse(JSON.stringify(rule.definition)) as ImportRuleDefinition,
+  } satisfies ImportRule;
+}
+
+function mergeRules(items: ImportRule[]) {
+  const merged = new Map<string, ImportRule>();
+  for (const item of items) {
+    merged.set(item.id, cloneRule(item));
+  }
+  return sortRules(Array.from(merged.values()));
+}
+
 export async function listRules() {
   const supabase = getSupabaseAdminClient();
   if (!supabase) {
@@ -28,8 +43,7 @@ export async function listRules() {
     return sortRules(Array.from(rules.values()));
   }
 
-  return sortRules(
-    data.map((row) => ({
+  const remoteRules = data.map((row) => ({
       id: String(row.id),
       name: String(row.name),
       description: String(row.description ?? ""),
@@ -37,8 +51,9 @@ export async function listRules() {
       definition: row.definition_json as ImportRuleDefinition,
       createdAt: String(row.created_at),
       updatedAt: String(row.updated_at),
-    })),
-  );
+    })) satisfies ImportRule[];
+
+  return mergeRules([...sampleRules, ...remoteRules]);
 }
 
 export async function getRuleById(id: string) {
